@@ -33,6 +33,7 @@ export class Editor extends Component<EditorProps> {
       height = "100%",
       changeText = "Update",
       style = {},
+      editor,
     } = this.props
 
     return (
@@ -40,6 +41,7 @@ export class Editor extends Component<EditorProps> {
         <AceEditor
           mode="javascript"
           theme="monokai"
+          ref={editor}
           editorProps={{ $blockScrolling: true }}
           value={code}
           onChange={value => {

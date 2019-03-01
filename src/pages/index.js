@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef } from "react"
 import { StateChart, Editor, StyledButton } from "../state-chart"
 import styled from "styled-components"
 import {
@@ -139,15 +139,27 @@ const BottomPaneButtons = styled.div`
 
 if (typeof window !== `undefined`) {
   window.getService = getService
+  window.delay = (timeout = 500) =>
+    new Promise(resolve => setTimeout(resolve, timeout))
 }
 
 const defaultEditorCode = `// available commands
-// getService
+// getService, delay
 
-const schemaCreated = () => getService(\`query-extractor\`).send(\`SCHEMA_CREATED\`)
-const getPageComponentService = pageComponent => getService({ type: \`page-component\`, id: pageComponent })
+const schemaCreated = () => getService('query-extractor').send('SCHEMA_CREATED')
+const runInitialQueries = () => getService('query - runner').send('RUN_INITIAL_QUERIES')
+const getPageComponentService = pageComponent => getService({ type: 'page-component', id: pageComponent })
+const getPageService = (path, componentPath) => getService({ type: 'page', id: path, args: { path, componentPath }})
 
-getPageComponentService(\`template-A\`).send(\`QUERY_EXTRACTION_BABEL_ERROR\`)
+await delay(1000)
+
+schemaCreated()
+
+await delay(1000)
+
+runInitialQueries()
+
+
 `
 export default () => {
   if (typeof window === `undefined`) {
@@ -156,6 +168,7 @@ export default () => {
 
   const [services, setServices] = useState(initialServices)
   const [code, setCode] = useLocalStorage(`code`, defaultEditorCode)
+  const editor = useRef(null)
 
   useEffect(() => {
     const unsubscribe = onNewService(updatedServices => {
@@ -201,11 +214,20 @@ export default () => {
         <BottomPaneButtons>
           <AddPageButton componentPath="template-A" />
           <AddPageButton componentPath="template-B" />
+          <StyledButton
+            small
+            onClick={() => {
+              editor.current.setState({ code: defaultEditorCode })
+            }}
+          >
+            Reset editor
+          </StyledButton>
         </BottomPaneButtons>
         <Editor
           changeText={`Execute`}
           style={{ padding: 0, backgroundColor: `var(--color-sidebar)` }}
           code={code}
+          ref={editor}
           onCodeChange={debounce(code => {
             setCode(code)
           }, 500)}
@@ -216,6 +238,7 @@ export default () => {
                 fn()
               `
               // eslint-disable-next-line
+              console.log(wrappedCode)
               eval(wrappedCode)
             } catch (e) {
               console.log(`eval error`, e)
