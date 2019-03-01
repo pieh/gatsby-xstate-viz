@@ -46,6 +46,9 @@ const page = Machine(
             actions: [`invalidateQueryResult`, `getQueryTextFromPageComponent`],
             cond: `isInDataDependencies`,
           },
+          QUERY_RESULT: {
+            actions: [`updateDataDependencies`],
+          },
         },
       },
     },
