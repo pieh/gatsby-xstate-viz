@@ -35,12 +35,12 @@ const queryExtractor = Machine(
       extractQueries: actions.assign({
         extractionScheduled: (ctx, event) => {
           console.log("extract")
-          setTimeout(() => {
-            getServices(`page-component`).send({
-              type: `QUERY_EXTRACTED`,
-              query: `some-cached-query`,
-            })
-          }, 1000)
+          // setTimeout(() => {
+          //   getServices(`page-component`).send({
+          //     type: `QUERY_EXTRACTED`,
+          //     query: `some-cached-query`,
+          //   })
+          // }, 1000)
 
           return false
         },

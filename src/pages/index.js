@@ -131,34 +131,54 @@ const BottomPaneButtons = styled.div`
   flex-direction: column;
 `
 
-// const BottomPaneEditor = styled(Editor)`
-//   flex: 1 1 600px;
-//   height: 400px;
-//   padding: 0;
-// `
+const Modal = styled.div`
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  min-width: 20rem;
+  min-height: 3rem;
+  background: var(--color-sidebar);
+  border: 2px solid var(--color-secondary);
+  display: flex;
+  flex-direction: column;
+  color: white;
+  font-family: sans-serif;
+  font-size: 11px;
+  z-index: 9999;
+`
 
+let onNewModal
 if (typeof window !== `undefined`) {
   window.getService = getService
   window.delay = (timeout = 500) =>
     new Promise(resolve => setTimeout(resolve, timeout))
+  window.step = message =>
+    new Promise(resolve => {
+      if (onNewModal) {
+        onNewModal(message, resolve)
+      }
+    })
 }
 
 const defaultEditorCode = `// available commands
 // getService, delay
 
 const schemaCreated = () => getService('query-extractor').send('SCHEMA_CREATED')
-const runInitialQueries = () => getService('query - runner').send('RUN_INITIAL_QUERIES')
+const runInitialQueries = () => getService('query-runner').send('RUN_INITIAL_QUERIES')
 const getPageComponentService = pageComponent => getService({ type: 'page-component', id: pageComponent })
 const getPageService = (path, componentPath) => getService({ type: 'page', id: path, args: { path, componentPath }})
 
 await delay(1000)
-
 schemaCreated()
 
 await delay(1000)
+getPageComponentService('template-A').send('QUERY_EXTRACION_BABEL_ERROR')
 
+await delay(1000)
 runInitialQueries()
 
+delay(1000)
+getPageComponentService('template-A').send({ type: 'QUERY_EXTRACTED', query: 'updated-query' })
 
 `
 export default () => {
@@ -167,10 +187,14 @@ export default () => {
   }
 
   const [services, setServices] = useState(initialServices)
+  const [modal, setModal] = useState(null)
   const [code, setCode] = useLocalStorage(`code`, defaultEditorCode)
   const editor = useRef(null)
 
   useEffect(() => {
+    onNewModal = (text, resolve) => {
+      setModal({ text, resolve })
+    }
     const unsubscribe = onNewService(updatedServices => {
       setServices({ ...updatedServices })
     })
@@ -238,7 +262,6 @@ export default () => {
                 fn()
               `
               // eslint-disable-next-line
-              console.log(wrappedCode)
               eval(wrappedCode)
             } catch (e) {
               console.log(`eval error`, e)
@@ -246,6 +269,18 @@ export default () => {
           }}
         />
       </BottomPane>
+      {modal && modal.text !== null && (
+        <Modal>
+          <StyledButton
+            onClick={() => {
+              modal.resolve()
+              setModal(null)
+            }}
+          >
+            {modal.text}
+          </StyledButton>
+        </Modal>
+      )}
     </Wrapper>
   )
 }
