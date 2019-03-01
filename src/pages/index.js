@@ -151,7 +151,7 @@ getPageComponentService(\`template-A\`).send(\`QUERY_EXTRACTION_BABEL_ERROR\`)
 `
 export default () => {
   if (typeof window === `undefined`) {
-    return <div>Loading JS</div>
+    return null
   }
 
   const [services, setServices] = useState(initialServices)
