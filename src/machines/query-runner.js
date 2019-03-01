@@ -40,20 +40,35 @@ const queryRunner = Machine(
             target: `idle`,
             actions: `pauseQueryQueue`,
           },
-          CREATE_NODE: {
+          API_RUNNING_START: {
             target: `waitingForAPIsToFinish`,
             actions: `pauseQueryQueue`,
+          },
+          RUN_QUERY: {
+            actions: `addQueryToQueue`,
           },
         },
       },
       waitingForAPIsToFinish: {
         on: {
           API_RUNNING_QUEUE_EMPTY: `runningQueries`,
+          RUN_QUERY: {
+            actions: `addQueryToQueue`,
+          },
+          QUERY_RESULT_SUCESS: {
+            actions: `addQueryToQueue`,
+          },
+          QUERY_RESULT_ERROR: {
+            actions: `addQueryToQueue`,
+          },
         },
       },
       idle: {
         on: {
           RUN_QUERY: `runningQueries`,
+          RUN_QUERY: {
+            actions: `addQueryToQueue`,
+          },
         },
       },
     },
