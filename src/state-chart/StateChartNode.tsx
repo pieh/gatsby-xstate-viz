@@ -1,14 +1,9 @@
-import React from "react";
-import { Machine as _Machine, StateNode, State, EventObject } from "xstate";
-import styled from "styled-components";
-import {
-  transitions,
-  condToString,
-  serializeEdge,
-  stateActions
-} from "./utils";
-import { tracker } from "./tracker";
-import { getEdges } from "xstate/lib/graph";
+import React from "react"
+import { Machine as _Machine, StateNode, State, EventObject } from "xstate"
+import styled from "styled-components"
+import { transitions, condToString, serializeEdge, stateActions } from "./utils"
+import { tracker } from "./tracker"
+import { getEdges } from "xstate/lib/graph"
 
 const StyledChildStates = styled.div`
   padding-top: 0.5rem;
@@ -19,7 +14,7 @@ const StyledChildStates = styled.div`
   flex-wrap: wrap;
   align-items: flex-start;
   min-height: 1rem;
-`;
+`
 
 const StyledChildStatesToggle = styled.button`
   appearance: none;
@@ -53,7 +48,7 @@ const StyledChildStatesToggle = styled.button`
   &:focus {
     outline: none;
   }
-`;
+`
 
 const StyledStateNodeHeader = styled.header`
   position: absolute;
@@ -93,7 +88,7 @@ const StyledStateNodeHeader = styled.header`
       font-size: 0.75em;
     }
   }
-`;
+`
 
 const StyledStateNode = styled.div`
   --color-shadow: rgba(0, 0, 0, 0.05);
@@ -190,7 +185,7 @@ const StyledStateNode = styled.div`
     height: 1px;
     display: block;
   }
-`;
+`
 
 const StyledEvents = styled.ul`
   padding: 0;
@@ -200,14 +195,14 @@ const StyledEvents = styled.ul`
   &:empty {
     display: none;
   }
-`;
+`
 
 const StyledStateNodeActions = styled.ul`
   list-style: none;
   padding: 0;
   margin: 0;
   margin-bottom: 0.5rem;
-`;
+`
 
 const StyledEvent = styled.li`
   list-style: none;
@@ -224,7 +219,7 @@ const StyledEvent = styled.li`
   &[data-disabled] > ${StyledStateNodeActions} {
     opacity: 0.7;
   }
-`;
+`
 
 const StyledEventButton = styled.button`
   --color-event: var(--color-primary);
@@ -290,7 +285,7 @@ const StyledEventButton = styled.button`
     color: black;
     font-style: italic;
   }
-`;
+`
 
 const StyledStateNodeAction = styled.li`
   display: flex;
@@ -306,7 +301,7 @@ const StyledStateNodeAction = styled.li`
     margin-right: 0.5ch;
     font-weight: bold;
   }
-`;
+`
 const StyledEventDot = styled.div`
   display: inline-block;
   height: 0.5rem;
@@ -337,47 +332,48 @@ const StyledEventDot = styled.div`
     border-radius: 50%;
     background-color: white;
   }
-`;
+`
 
 function friendlyEventName(event: string) {
-  let match = event.match(/^xstate\.after\((\d+)\)/);
+  let match = event.match(/^xstate\.after\((\d+)\)/)
 
   if (match) {
-    return `after ${match[1]}ms`;
+    return `after ${match[1]}ms`
   }
 
-  match = event.match(/^done\.state/);
+  match = event.match(/^done\.state/)
 
   if (match) {
-    return `done`;
+    return `done`
   }
 
   if (event === "") {
-    return "transient";
+    return "transient"
   }
 
-  return event;
+  return event
 }
 
 interface StateChartNodeProps {
-  stateNode: StateNode;
-  current: State<any, any>;
-  preview?: State<any, any>;
-  onEvent: (event: string) => void;
-  onPreEvent: (event: string) => void;
-  onExitPreEvent: () => void;
-  toggledStates: Record<string, boolean>;
+  stateNode: StateNode
+  current: State<any, any>
+  preview?: State<any, any>
+  onEvent: (event: string) => void
+  onPreEvent: (event: string) => void
+  onExitPreEvent: () => void
+  toggledStates: Record<string, boolean>
+  serviceID?: string
 }
 
 export class StateChartNode extends React.Component<StateChartNodeProps> {
   state = {
-    toggled: true
-  };
+    toggled: true,
+  }
 
-  stateRef = React.createRef<any>();
+  stateRef = React.createRef<any>()
 
   public componentDidUpdate() {
-    tracker.update(this.props.stateNode.id, this.stateRef.current);
+    tracker.update(this.props.stateNode.id, this.stateRef.current)
   }
   public render(): JSX.Element {
     const {
@@ -386,16 +382,21 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
       preview,
       onEvent,
       onPreEvent,
-      onExitPreEvent
-    } = this.props;
-    const isActive = current.matches(stateNode.path.join(".")) || undefined;
+      onExitPreEvent,
+      serviceID,
+    } = this.props
+    const isActive = current.matches(stateNode.path.join(".")) || undefined
     const isPreview = preview
       ? preview.matches(stateNode.path.join(".")) || undefined
-      : undefined;
+      : undefined
 
     const dataType = stateNode.parent
       ? stateNode.type
-      : `machine ${stateNode.type}`;
+      : `machine ${stateNode.type}`
+
+    const header = []
+    if (stateNode.key) header.push(stateNode.key)
+    if (serviceID && stateNode.key !== serviceID) header.push(`[${serviceID}]`)
 
     return (
       <StyledStateNode
@@ -412,15 +413,15 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
         <StyledStateNodeHeader
           style={{
             // @ts-ignore
-            "--depth": stateNode.path.length
+            "--depth": stateNode.path.length,
           }}
         >
-          <strong>{stateNode.key}</strong>
+          <strong>{header.join(` `)}</strong>
         </StyledStateNodeHeader>
         {!!stateActions(stateNode).length && (
           <StyledStateNodeActions>
             {stateNode.definition.onEntry.map(action => {
-              const actionString = action.type;
+              const actionString = action.type
               return (
                 <StyledStateNodeAction
                   key={actionString}
@@ -428,10 +429,10 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                 >
                   {actionString}
                 </StyledStateNodeAction>
-              );
+              )
             })}
             {stateNode.definition.onExit.map(action => {
-              const actionString = action.type;
+              const actionString = action.type
               return (
                 <StyledStateNodeAction
                   key={actionString}
@@ -439,33 +440,33 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                 >
                   {actionString}
                 </StyledStateNodeAction>
-              );
+              )
             })}
           </StyledStateNodeActions>
         )}
         <StyledEvents>
           {getEdges(stateNode, { depth: 0 }).map(edge => {
-            const { event: ownEvent } = edge;
+            const { event: ownEvent } = edge
             const isBuiltInEvent =
               ownEvent.indexOf("xstate.") === 0 ||
               ownEvent.indexOf("done.") === 0 ||
-              ownEvent === "";
+              ownEvent === ""
 
             const disabled: boolean =
               !isActive ||
               current.nextEvents.indexOf(ownEvent) === -1 ||
               (!!edge.cond &&
                 typeof edge.cond === "function" &&
-                !edge.cond(current.context, { type: ownEvent }, {}));
+                !edge.cond(current.context, { type: ownEvent }, {}))
             const cond = edge.cond
               ? `[${edge.cond.toString().replace(/\n/g, "")}]`
-              : "";
+              : ""
 
             return (
               <StyledEvent
                 style={{
                   //@ts-ignore
-                  "--delay": edge.transition.delay
+                  "--delay": edge.transition.delay,
                 }}
                 data-disabled={disabled || undefined}
                 key={serializeEdge(edge)}
@@ -491,7 +492,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                 {!!edge.transition.actions.length && (
                   <StyledStateNodeActions>
                     {edge.transition.actions.map((action, i) => {
-                      const actionString = action.type;
+                      const actionString = action.type
                       return (
                         <StyledStateNodeAction
                           data-action-type="do"
@@ -499,18 +500,18 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                         >
                           {actionString}
                         </StyledStateNodeAction>
-                      );
+                      )
                     })}
                   </StyledStateNodeActions>
                 )}
               </StyledEvent>
-            );
+            )
           })}
         </StyledEvents>
         {Object.keys(stateNode.states).length ? (
           <StyledChildStates>
             {Object.keys(stateNode.states || []).map(key => {
-              const childStateNode = stateNode.states[key];
+              const childStateNode = stateNode.states[key]
 
               return (
                 <StateChartNode
@@ -523,7 +524,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   onExitPreEvent={onExitPreEvent}
                   toggledStates={this.props.toggledStates}
                 />
-              );
+              )
             })}
           </StyledChildStates>
         ) : null}
@@ -531,14 +532,14 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
           <StyledChildStatesToggle
             title={this.state.toggled ? "Hide children" : "Show children"}
             onClick={e => {
-              e.stopPropagation();
+              e.stopPropagation()
               this.setState({ toggled: !this.state.toggled }, () => {
-                tracker.updateAll();
-              });
+                tracker.updateAll()
+              })
             }}
           />
         ) : null}
       </StyledStateNode>
-    );
+    )
   }
 }
