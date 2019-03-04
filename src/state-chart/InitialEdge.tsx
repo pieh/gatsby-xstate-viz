@@ -1,16 +1,17 @@
-import React from "react";
-import { StateNode } from "xstate";
-import { tracker } from "./tracker";
-import { relative } from "./utils";
+import React from "react"
+import { StateNode } from "xstate"
+import { tracker } from "./tracker"
+import { relative } from "./utils"
 
 interface InitialEdgeProps {
-  source: StateNode;
-  svgRef: SVGSVGElement;
-  preview: boolean;
+  source: StateNode
+  svgRef: SVGSVGElement
+  preview: boolean
+  serviceID: string
 }
 
 interface InitialEdgeState {
-  sourceElement?: Element;
+  sourceElement?: Element
 }
 
 export class InitialEdge extends React.Component<
@@ -18,27 +19,27 @@ export class InitialEdge extends React.Component<
   InitialEdgeState
 > {
   state = {
-    sourceElement: undefined
-  } as InitialEdgeState;
+    sourceElement: undefined,
+  } as InitialEdgeState
   componentDidMount() {
-    const { id } = this.props.source;
-    tracker.listen(id, data => {
-      this.setState({ sourceElement: data.element });
-    });
+    const { id } = this.props.source
+    tracker.listen(this.props.serviceID, id, data => {
+      this.setState({ sourceElement: data.element })
+    })
   }
   render() {
-    const { svgRef, preview } = this.props;
+    const { svgRef, preview } = this.props
 
     if (!this.state.sourceElement) {
-      return null;
+      return null
     }
     const rect = relative(
       this.state.sourceElement.getBoundingClientRect(),
       svgRef
-    );
-    const { top, left } = rect;
+    )
+    const { top, left } = rect
 
-    const stroke = preview ? "gray" : "var(--color-edge)";
+    const stroke = preview ? "gray" : "var(--color-edge)"
 
     return (
       <g>
@@ -52,6 +53,6 @@ export class InitialEdge extends React.Component<
           markerEnd={preview ? `url(#marker-preview)` : `url(#marker)`}
         />
       </g>
-    );
+    )
   }
 }

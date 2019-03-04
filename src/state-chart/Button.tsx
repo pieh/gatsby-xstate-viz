@@ -1,7 +1,11 @@
 import React from "react"
 import styled from "styled-components"
 
-export const StyledButton = styled.button`
+// interface StyleButtonProps {
+//   small?: boolean
+// }
+
+export const StyledButton = styled("button")`
   appearance: none;
   background: transparent;
   color: white;

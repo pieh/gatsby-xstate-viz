@@ -1,4 +1,5 @@
 import * as XState from "xstate"
+import { isProduction } from "apollo-utilities"
 
 const services = {}
 
@@ -22,6 +23,7 @@ const getServices = type => {
     send: event => {
       servicesOfType.forEach(s => s.service.send(event))
     },
+    services: servicesOfType,
   }
 }
 
@@ -32,7 +34,7 @@ const getService = arg => {
     }
   }
 
-  let { id, type, args = {} } = arg
+  let { id, type, args = {}, createIfNotFound = true } = arg
   if (!type) {
     // for single/global instances
     type = id
@@ -41,9 +43,13 @@ const getService = arg => {
   const serviceID = `${type}-${id}`
   if (serviceID in services) {
     return services[serviceID].service
+  } else if (!createIfNotFound) {
+    return null
   }
 
   const machineDef = machineLookup[type]
+
+  console.log(machineDef)
 
   const machine = machineDef.withContext({
     ...machineDef.context,
@@ -62,15 +68,26 @@ const getService = arg => {
   })
 
   services[serviceID] = serviceDescription
-  // console.log("service added")
   triggerUpdate()
   return serviceDescription.service
 }
+
+const isDev = true
 
 const machineLookup = {}
 
 const registerMachine = machineDef => {
   machineLookup[machineDef.id] = machineDef
+
+  machineDef.machine.options.guards = {
+    ...machineDef.machine.options.guards,
+    dev: () => isDev,
+    prod: () => isProduction,
+  }
+
+  // [`dev`] = () => isDev
+  // machineDef.machine.options.guards[`prod`] = () => !isDev
+  // console.log(machineDef)
   Object.values(services).forEach(serviceDef => {
     if (serviceDef.machine.id === machineDef.id) {
       serviceDef.service.stop()
@@ -78,10 +95,6 @@ const registerMachine = machineDef => {
       serviceDef.machine = machineDef.withContext(serviceDef.current.context)
       serviceDef.service = XState.interpret(serviceDef.machine).start()
       serviceDef.service.state = serviceDef.current
-
-      // .start().update()
-
-      // console.log({ serviceDef })
     }
   })
   triggerUpdate()

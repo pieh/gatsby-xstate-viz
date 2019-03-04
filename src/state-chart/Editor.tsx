@@ -11,9 +11,11 @@ interface EditorProps {
   onCodeChange?: (code: string) => void
   height?: number | string
   changeText?: string
+  style: any
+  editor: React.MutableRefObject<AceEditor>
 }
 
-const StyledEditor = styled.div`
+const StyledEditor = styled("div")`
   height: 100%;
   width: 100%;
   display: flex;
@@ -60,6 +62,7 @@ export class Editor extends Component<EditorProps> {
               name: "run",
               bindKey: {
                 mac: "Shift+enter",
+                win: "Shift+enter",
               },
               exec: () => {
                 if (onChange) {

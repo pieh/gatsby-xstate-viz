@@ -1,6 +1,6 @@
 import React from "react"
 import { Machine as _Machine, StateNode, State, EventObject } from "xstate"
-import styled from "styled-components"
+import styled, { css, keyframes } from "styled-components"
 import { transitions, condToString, serializeEdge, stateActions } from "./utils"
 import { tracker } from "./tracker"
 import { getEdges } from "xstate/lib/graph"
@@ -221,6 +221,62 @@ const StyledEvent = styled.li`
   }
 `
 
+const breathingActive = keyframes`
+  from {
+    // border-color: #b4e391;
+    border-color: #19bec4;
+    // background: linear-gradient(0, red, #42a5f5);
+  }
+  to {
+    border-color: #61c419;
+    // background: linear-gradient(360deg, red, #42a5f5);
+    // background: -moz-linear-gradient(left, #b4e391 0%, #61c419 50%, #b4e391 100%);
+  }
+`
+
+interface StyledActivityProps {
+  active: boolean
+}
+
+const StyledActivity = styled.li<StyledActivityProps>`
+  border-radius: 2rem;
+  border: 2px solid var(--color-disabled);
+  // background: var(--color-disabled);
+  // color: #777;
+  // font-size: 0.75em;
+  // font-weight: bold;
+  display: inline-block;
+  position: relative;
+  line-height: 1;
+  // text-transform: uppercase;
+
+  // text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+  // letter-spacing: 0.7px;
+
+  /* !importanté */
+  padding: 2px;
+  border-radius: 2em;
+  padding: 0.25rem 0.5rem;
+  color: #888;
+
+  ${props =>
+    props.active &&
+    css`
+      // border-color: green;
+      color: #172109;
+      border-color: #61c419;
+      // animation ${breathingActive} 1s infinite;
+      // animation-direction: alternate;
+      // animation-name: ${breathingActive};
+      // animation-duration: 1s;
+    `}
+`
+// ${props =>
+//   props.active &&
+//   css`
+//     border-color: transparent;
+//     color: #172109;
+//   `}
 const StyledEventButton = styled.button`
   --color-event: var(--color-primary);
   appearance: none;
@@ -363,6 +419,8 @@ interface StateChartNodeProps {
   onExitPreEvent: () => void
   toggledStates: Record<string, boolean>
   serviceID?: string
+  activities?: string[]
+  showLabel?: boolean
 }
 
 export class StateChartNode extends React.Component<StateChartNodeProps> {
@@ -373,21 +431,32 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
   stateRef = React.createRef<any>()
 
   public componentDidUpdate() {
-    tracker.update(this.props.stateNode.id, this.stateRef.current)
+    tracker.update(
+      this.props.serviceID,
+      this.props.stateNode.id,
+      this.stateRef.current
+    )
   }
   public render(): JSX.Element {
     const {
       stateNode,
       current,
+      activities,
       preview,
       onEvent,
       onPreEvent,
       onExitPreEvent,
       serviceID,
+      showLabel,
     } = this.props
-    const isActive = current.matches(stateNode.path.join(".")) || undefined
+    const isActive =
+      current.matches(stateNode.path.join(".")) ||
+      stateNode.path.length === 0 ||
+      undefined
     const isPreview = preview
-      ? preview.matches(stateNode.path.join(".")) || undefined
+      ? preview.matches(stateNode.path.join(".")) ||
+        stateNode.path.length === 0 ||
+        undefined
       : undefined
 
     const dataType = stateNode.parent
@@ -396,11 +465,12 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
 
     const header = []
     if (stateNode.key) header.push(stateNode.key)
-    if (serviceID && stateNode.key !== serviceID) header.push(`[${serviceID}]`)
+    if (showLabel && serviceID && stateNode.key !== serviceID)
+      header.push(`[${serviceID}]`)
 
     return (
       <StyledStateNode
-        key={stateNode.id}
+        key={stateNode.id + `_`}
         data-key={stateNode.key}
         data-id={stateNode.id}
         data-type={dataType}
@@ -458,6 +528,15 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
               (!!edge.cond &&
                 typeof edge.cond === "function" &&
                 !edge.cond(current.context, { type: ownEvent }, {}))
+
+            // console.log(ownEvent, {
+            //   disabled,
+            //   isActive,
+            //   current,
+            //   path: stateNode.path,
+            // })
+            //current.matches(stateNode.path.join("."))
+
             const cond = edge.cond
               ? `[${edge.cond.toString().replace(/\n/g, "")}]`
               : ""
@@ -518,6 +597,7 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
                   stateNode={childStateNode}
                   current={current}
                   preview={preview}
+                  serviceID={serviceID}
                   key={childStateNode.id}
                   onEvent={onEvent}
                   onPreEvent={onPreEvent}
@@ -538,6 +618,18 @@ export class StateChartNode extends React.Component<StateChartNodeProps> {
               })
             }}
           />
+        ) : null}
+        {activities && activities.length > 0 ? (
+          <StyledEvents>
+            {activities.map(activity => {
+              const active = current.activities[activity]
+              return (
+                <StyledActivity active={active} key={activity}>
+                  {activity}
+                </StyledActivity>
+              )
+            })}
+          </StyledEvents>
         ) : null}
       </StyledStateNode>
     )

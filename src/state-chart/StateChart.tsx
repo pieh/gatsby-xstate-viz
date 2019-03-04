@@ -14,7 +14,6 @@ import { StateChartNode } from "./StateChartNode"
 
 import { serializeEdge, isHidden, initialStateNodes } from "./utils"
 import { Edge } from "./Edge"
-import { tracker } from "./tracker"
 import { Editor } from "./Editor"
 import { InitialEdge } from "./InitialEdge"
 
@@ -138,6 +137,8 @@ interface StateChartState {
   toggledStates: Record<string, boolean>
   service: Interpreter<any>
   error?: any
+  activities: string[]
+  svgRef: SVGSVGElement
 }
 
 const replacer = (key, value) => {
@@ -197,6 +198,8 @@ export class StateChart extends React.Component<
   StateChartProps,
   StateChartState
 > {
+  // svgRef = (() => React.createRef<SVGSVGElement>())()
+
   state: StateChartState = (() => {
     const machine = toMachine(this.props.machine)
     // const machine = this.props.machine;
@@ -219,12 +222,16 @@ export class StateChart extends React.Component<
       previewEvent: undefined,
       view: "definition", // or 'state'
       machine: machine,
+      svgRef: null, //React.createRef<SVGSVGElement>(),
       code:
         typeof this.props.machine === "string"
           ? this.props.machine
           : `Machine(${JSON.stringify(machine.config, null, 2)})`,
       toggledStates: {},
       service: service,
+      activities: machine.options.activities
+        ? Object.keys(machine.options.activities)
+        : [],
     }
   })()
 
@@ -233,7 +240,10 @@ export class StateChart extends React.Component<
   // }
   getSnapshotBeforeUpdate(prevProps, prevState) {
     if (prevState.machine !== this.props.machine) {
-      this.props.service.onTransition(current => {
+      const machine = toMachine(this.props.machine)
+      const service = this.props.service || interpret(machine, {})
+
+      service.onTransition(current => {
         this.setState({ current }, () => {
           if (this.state.previewEvent) {
             this.setState({
@@ -243,8 +253,11 @@ export class StateChart extends React.Component<
         })
       })
       const newState = {
-        machine: this.props.machine,
-        service: this.props.service,
+        machine: machine,
+        service: service,
+        activities: machine.options.activities
+          ? Object.keys(machine.options.activities)
+          : [],
       }
       this.setState(newState)
       // console.log("updating machine2", newState)
@@ -255,40 +268,40 @@ export class StateChart extends React.Component<
   // componentWillUpdate()
 
   // static getDerivedStateFromProps(props, state) {}
-  svgRef = React.createRef<SVGSVGElement>()
+
   // componentDidMount() {
   //   this.state.service.start()
   // }
   renderView() {
     const { view, current, machine, code } = this.state
 
-    switch ("state") {
-      case "definition":
-        return (
-          <Editor
-            code={this.state.code}
-            onChange={code => this.updateMachine(code)}
-          />
-        )
-      case "state":
-        return (
-          <>
-            <div style={{ overflowY: "auto" }}>
-              <Field label="Value">
-                <StyledPre>{stringify(current.value)}</StyledPre>
-              </Field>
-              <Field label="Context" disabled={!current.context}>
-                {current.context !== undefined ? (
-                  <StyledPre>{stringify(current.context)}</StyledPre>
-                ) : null}
-              </Field>
-              <Field label="Actions" disabled={!current.actions.length}>
-                {!!current.actions.length && (
-                  <StyledPre>{stringify(current.actions)}</StyledPre>
-                )}
-              </Field>
-            </div>
-            {/* <Field
+    // switch ("state") {
+    //   case "definition":
+    //     return (
+    //       <Editor
+    //         code={this.state.code}
+    //         onChange={code => this.updateMachine(code)}
+    //       />
+    //     )
+    //   case "state":
+    return (
+      <>
+        <div style={{ overflowY: "auto" }}>
+          <Field label="Value">
+            <StyledPre>{stringify(current.value)}</StyledPre>
+          </Field>
+          <Field label="Context" disabled={!current.context}>
+            {current.context !== undefined ? (
+              <StyledPre>{stringify(current.context)}</StyledPre>
+            ) : null}
+          </Field>
+          <Field label="Actions" disabled={!current.actions.length}>
+            {!!current.actions.length && (
+              <StyledPre>{stringify(current.actions)}</StyledPre>
+            )}
+          </Field>
+        </div>
+        {/* <Field
               label="Event"
               style={{
                 marginTop: "auto",
@@ -315,11 +328,11 @@ export class StateChart extends React.Component<
                 }}
               />
             </Field> */}
-          </>
-        )
-      default:
-        return null
-    }
+      </>
+    )
+    //   default:
+    //     return null
+    // }
   }
   updateMachine(code: string) {
     let machine: StateNode
@@ -365,8 +378,14 @@ export class StateChart extends React.Component<
       }
     )
   }
+
+  setRef = svgRef => {
+    // console.log("setting ref", svgRef)
+    this.setState({ svgRef })
+  }
+
   render() {
-    const { current, preview, previewEvent, machine, code } = this.state
+    const { current, preview, previewEvent, machine, code, svgRef } = this.state
 
     const edges = getEdges(machine)
 
@@ -387,6 +406,8 @@ export class StateChart extends React.Component<
       })
     })
 
+    // console.log("svg", this.props.serviceID, svgRef)
+
     return (
       <StyledStateChart
         key={code}
@@ -400,10 +421,12 @@ export class StateChart extends React.Component<
             stateNode={this.state.machine}
             serviceID={this.props.serviceID}
             current={current}
+            showLabel={true}
+            isActive={true}
             preview={preview}
+            activities={this.state.activities}
             onEvent={this.state.service.send.bind(this)}
             onPreEvent={event => {
-              // console.log('a',event)
               this.setState({
                 preview: this.state.service.nextState(event),
                 previewEvent: event,
@@ -426,8 +449,7 @@ export class StateChart extends React.Component<
               overflow: "visible",
               pointerEvents: "none",
             }}
-            ref={this.svgRef}
-            key={JSON.stringify(this.state.toggledStates)}
+            ref={this.setRef}
           >
             <defs>
               <marker
@@ -454,7 +476,7 @@ export class StateChart extends React.Component<
               </marker>
             </defs>
             {edges.map(edge => {
-              if (!this.svgRef.current) {
+              if (!svgRef) {
                 return
               }
 
@@ -463,8 +485,9 @@ export class StateChart extends React.Component<
               return (
                 <Edge
                   key={serializeEdge(edge)}
-                  svg={this.svgRef.current}
+                  svg={svgRef}
                   edge={edge}
+                  serviceID={this.props.serviceID}
                   preview={
                     edge.event === previewEvent &&
                     current.matches(edge.source.path.join(".")) &&
@@ -475,7 +498,7 @@ export class StateChart extends React.Component<
               )
             })}
             {initialStateNodes(machine).map(initialStateNode => {
-              if (!this.svgRef.current) {
+              if (!svgRef) {
                 return
               }
 
@@ -485,7 +508,8 @@ export class StateChart extends React.Component<
                 <InitialEdge
                   key={initialStateNode.id}
                   source={initialStateNode}
-                  svgRef={this.svgRef.current}
+                  serviceID={this.props.serviceID}
+                  svgRef={svgRef}
                   preview={
                     current.matches(initialStateNode.path.join(".")) ||
                     (!!preview &&

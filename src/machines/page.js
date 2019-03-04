@@ -13,61 +13,108 @@ const getPageComponentService = componentPath =>
 const page = Machine(
   {
     id: `page`,
-    initial: `initial`,
+    initial: `init`,
     context: {
       path: ``,
       componentPath: ``,
       pageContext: {},
       dataDependencies: {},
+      queryResult: null,
+    },
+
+    on: {
+      QUERY_RESULT: {
+        actions: [`handleQueryResults`],
+      },
     },
     states: {
-      initial: {
+      init: {
         onEntry: [
           `initPageComponentService`,
           `readCachedContext`,
           `readCachedDataDependencies`,
         ],
         on: {
-          "": {
-            target: `idle`,
-          },
+          "": [
+            {
+              target: `active`,
+              // actions: initActions,
+              //   cond: `dev`,
+              // },
+              // {
+              //   target: `active`,
+              //   // actions: initActions,
+              //   cond: `prod`,
+            },
+          ],
         },
       },
-      idle: {
+      // inactive: {
+      //   on: {
+      //     QUERY_TEXT: {
+      //       actions: [`invalidateQueryResult`],
+      //     },
+      //     DIRTY_DEPENDENCY: {
+      //       actions: [`invalidateQueryResult`],
+      //       cond: `isInDataDependencies`,
+      //     },
+      //     PAGE_ACTIVE: `active`,
+      //   },
+      // },
+      active: {
+        initial: `idle`,
         on: {
           QUERY_TEXT: {
-            actions: [`invalidateQueryResult`, `queueQueryRunning`],
+            actions: [`invalidateQueryResult`],
+            target: `active.queryRunning`,
           },
-          CREATE_NODE: {
-            actions: [`invalidateQueryResult`, `getQueryTextFromPageComponent`],
+          DIRTY_DEPENDENCY: {
+            actions: [
+              `invalidateQueryResult` /*`getQueryTextFromPageComponent`*/,
+            ],
+            target: `active.waitingForQueryText`,
             cond: `isInDataDependencies`,
           },
-          DELETE_NODE: {
-            actions: [`invalidateQueryResult`, `getQueryTextFromPageComponent`],
-            cond: `isInDataDependencies`,
-          },
-          QUERY_RESULT: {
-            actions: [`updateDataDependencies`],
-          },
+
+          // PAGE_INACTIVE: `inactive`,
+        },
+        states: {
+          idle: {},
+          queryRunning: {},
+          waitingForQueryText: {},
         },
       },
     },
   },
   {
     actions: {
-      initPageComponentService: context => {
-        getPageComponentService(context.componentPath).send({
+      initPageComponentService: ctx => {
+        getPageComponentService(ctx.componentPath).send({
           type: `NEW_PAGE`,
-          path: context.path,
+          path: ctx.path,
         })
       },
       queueQueryRunning: (ctx, event) => {
         console.log(`run query ${ctx.path}: "${event.query}"`)
       },
-      invalidateDataDependencies: () => {},
+      invalidateDataDependencies: (ctx, event) => {
+        console.log("invalidating for ", ctx.path)
+      },
+      handleQueryResults: function(ctx, event, a, b, c) {
+        console.log("handleQueryResults", ctx, event, a, b, c, this)
+      },
+      getQueryTextFromPageComponent: ctx => {
+        console.log("get query from page component", ctx.componentPath)
+        getPageComponentService(ctx.componentPath).send({
+          type: `GET_QUERY_TEXT`,
+          path: ctx.path,
+        })
+      },
     },
     guards: {
-      isInDataDependencies: (ctx, event) => false,
+      isInDataDependencies: (ctx, event) => true,
+      dev: () => true,
+      prod: () => false,
     },
   }
 )

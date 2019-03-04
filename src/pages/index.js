@@ -6,6 +6,7 @@ import {
   onNewService,
   getService,
 } from "../utils/services"
+import { delay } from "../utils/misc"
 
 import debounce from "lodash.debounce"
 
@@ -150,8 +151,7 @@ const Modal = styled.div`
 let onNewModal
 if (typeof window !== `undefined`) {
   window.getService = getService
-  window.delay = (timeout = 500) =>
-    new Promise(resolve => setTimeout(resolve, timeout))
+  window.delay = delay
   window.step = message =>
     new Promise(resolve => {
       if (onNewModal) {
