@@ -40,15 +40,9 @@ const queryExtractor = Machine<QueryExtractorContext>(
       active: {
         initial: `idle`,
         activities: [`watchingFiles`],
-        onExit: () => {
-          console.log("onExit")
-        },
         states: {
           idle: {},
           extracting: {
-            onExit: () => {
-              console.log("onexit 2")
-            },
             invoke: {
               id: `compileQueries`,
               src: async (ctx, event) => {
@@ -84,10 +78,10 @@ const queryExtractor = Machine<QueryExtractorContext>(
           // },
         },
         on: {
-          FILE_CHANGED: `active.extracting`,
+          FILE_CHANGED: `.extracting`,
           REGISTER_FILE: {
             actions: `registerFile`,
-            target: `active.extracting`,
+            target: `.extracting`,
             cond: `fileNotRegistered`,
           },
         },
