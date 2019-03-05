@@ -43,6 +43,7 @@ const queryExtractor = Machine<QueryExtractorContext>(
         states: {
           idle: {},
           extracting: {
+            onExit: `handleQueryExtractionResult`,
             invoke: {
               id: `compileQueries`,
               src: async (ctx, event) => {
@@ -51,12 +52,12 @@ const queryExtractor = Machine<QueryExtractorContext>(
               onDone: [
                 {
                   target: `idle`,
-                  actions: [`handleQueryExtractionResult`],
+                  // actions: [],
                   cond: `dev`,
                 },
                 {
                   target: `#query-extractor.done`,
-                  actions: [`handleQueryExtractionResult`],
+                  // actions: [`handleQueryExtractionResult`],
                   cond: `prod`,
                 },
               ],
@@ -136,6 +137,7 @@ const queryExtractor = Machine<QueryExtractorContext>(
             }).send(event)
           }
         }
+        getService(`bootstrap`).send(`QUERIES_EXTRACTED`)
         // getService(`query-extractor`)
         // const { services } = getServices(`page-component`)
         // services.id

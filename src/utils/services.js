@@ -49,9 +49,13 @@ const getService = arg => {
 
   const machineDef = machineLookup[type]
 
-  console.log(machineDef)
+  // console.log(machineDef)
+  // console.log({ serviceID })
+
+  // const machineContext
 
   const machine = machineDef.withContext({
+    serviceID,
     ...machineDef.context,
     ...args,
   })

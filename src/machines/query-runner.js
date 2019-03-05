@@ -1,5 +1,10 @@
 import { Machine } from "xstate"
 import { registerMachine } from "../utils/services"
+import {
+  pauseQueryQueue,
+  resumeQueryQueue,
+  addToQueryToQueue,
+} from "../implementations/query-runner"
 
 const queryQueueStates = {
   none: `NONE`,
@@ -71,31 +76,21 @@ const queryRunner = Machine(
           },
         },
       },
-      done: {
-        // on: {
-        //   RUN_QUERY: {
-        //     actions: `this-should-not-happen`,
-        //   },
-        // },
-      },
+      done: {},
     },
   },
   {
-    // guards: {
-    //   dev: () => true,
-    //   prod: () => false,
-    // },
     activities: {
       runningQueries: () => {
-        console.log("running queries")
-        return () => {
-          console.log("pausing query running")
-        }
+        resumeQueryQueue()
+        return pauseQueryQueue
       },
     },
     actions: {
+      pauseQueryQueue,
       addQueryToQueue: (ctx, event) => {
         console.log(`add to the queue`, ctx, event)
+        addToQueryToQueue(event)
       },
     },
   }

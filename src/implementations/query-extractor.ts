@@ -27,20 +27,20 @@ export default async (extraFiles: string[]): Promise<Queries> => {
 
   const result: Queries = new Map()
 
-  result.set(`template-A`, {
+  result.set(`templates/index.js`, {
     text: `extracted-query`,
     status: `EXTRACTED`,
     isStaticQuery: false,
   })
-  TODOFiles.delete(`template-A`)
+  TODOFiles.delete(`templates/index.js`)
 
-  result.set(`template-B`, {
+  result.set(`templates/post.js`, {
     status: `GRAPHQL_ERROR`,
     text: ``,
     isStaticQuery: false,
   })
 
-  TODOFiles.delete(`template-B`)
+  TODOFiles.delete(`templates/post.js`)
 
   TODOFiles.forEach(extraFile => {
     result.set(extraFile, {

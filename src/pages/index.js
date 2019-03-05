@@ -6,7 +6,7 @@ import {
   onNewService,
   getService,
 } from "../utils/services"
-import { delay } from "../utils/misc"
+import * as MiscUtils from "../utils/misc"
 
 import debounce from "lodash.debounce"
 
@@ -151,7 +151,11 @@ const Modal = styled.div`
 let onNewModal
 if (typeof window !== `undefined`) {
   window.getService = getService
-  window.delay = delay
+
+  Object.entries(MiscUtils).forEach(([exportName, val]) => {
+    window[exportName] = val
+  })
+  // window.delay = delay
   window.step = message =>
     new Promise(resolve => {
       if (onNewModal) {
@@ -236,9 +240,18 @@ export default () => {
       </StateChartsContainer>
       <BottomPane>
         <BottomPaneButtons>
-          <AddPageButton componentPath="template-A" />
-          <AddPageButton componentPath="template-B" />
+          {/* <AddPageButton componentPath="template-A" />
+          <AddPageButton componentPath="template-B" /> */}
           <StyledButton
+            small
+            onClick={() => {
+              getService(`bootstrap`).send(`BOOTSTRAP_START`)
+            }}
+          >
+            Start simulation
+          </StyledButton>
+          <StyledButton
+            style={{ marginTop: "auto" }}
             small
             onClick={() => {
               editor.current.setState({ code: defaultEditorCode })

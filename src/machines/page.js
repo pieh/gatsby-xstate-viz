@@ -80,7 +80,9 @@ const page = Machine(
         },
         states: {
           idle: {},
-          queryRunning: {},
+          queryRunning: {
+            onEntry: `queueQueryRunning`,
+          },
           waitingForQueryText: {},
         },
       },
@@ -96,6 +98,11 @@ const page = Machine(
       },
       queueQueryRunning: (ctx, event) => {
         console.log(`run query ${ctx.path}: "${event.query}"`)
+        getService(`query-runner`).send({
+          type: `RUN_QUERY`,
+          query: event.query,
+          id: ctx.serviceID,
+        })
       },
       invalidateDataDependencies: (ctx, event) => {
         console.log("invalidating for ", ctx.path)
