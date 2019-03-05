@@ -1,5 +1,5 @@
 import { Machine } from "xstate"
-import { registerMachine } from "../utils/services"
+import { registerMachine, getService } from "../utils/services"
 import {
   pauseQueryQueue,
   resumeQueryQueue,
@@ -91,6 +91,13 @@ const queryRunner = Machine(
       addQueryToQueue: (ctx, event) => {
         console.log(`add to the queue`, ctx, event)
         addToQueryToQueue(event)
+      },
+      sendQueryResult: (ctx, event) => {
+        getService(event.task.id).send({
+          type: `QUERY_RESULT`,
+          result: event.result,
+        })
+        // console.log("send query result to a page service", event)
       },
     },
   }

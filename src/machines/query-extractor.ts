@@ -131,6 +131,7 @@ const queryExtractor = Machine<QueryExtractorContext>(
               query.text,
               event
             )
+
             getService({
               type: `page-component`,
               id: componentPath,

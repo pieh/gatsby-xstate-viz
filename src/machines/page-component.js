@@ -22,11 +22,14 @@ const pageComponent = Machine(
         {
           target: `success`,
           actions: [`setQuery`, `sendQueryTextToAllPages`],
-          // cond: `queryChanged`,
+          cond: `queryChanged`,
         },
-        // {
-        //   target: `success`,
-        // },
+        {
+          target: `success`,
+          actions: ctx => {
+            console.log("query did not change", ctx.componentPath)
+          },
+        },
       ],
     },
     states: {

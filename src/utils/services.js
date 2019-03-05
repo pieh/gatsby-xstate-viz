@@ -35,19 +35,21 @@ const getService = arg => {
   }
 
   let { id, type, args = {}, createIfNotFound = true } = arg
-  if (!type) {
-    // for single/global instances
-    type = id
-  }
+  // if (!type) {
+  //   // for single/global instances
+  //   type = id
+  // }
 
-  const serviceID = `${type}-${id}`
+  const serviceID = type ? `${type}-${id}` : id
+
+  // const serviceID = `${type}-${id}`
   if (serviceID in services) {
     return services[serviceID].service
   } else if (!createIfNotFound) {
     return null
   }
 
-  const machineDef = machineLookup[type]
+  const machineDef = machineLookup[type || id]
 
   // console.log(machineDef)
   // console.log({ serviceID })

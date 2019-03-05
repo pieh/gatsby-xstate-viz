@@ -22,11 +22,11 @@ const page = Machine(
       queryResult: null,
     },
 
-    on: {
-      QUERY_RESULT: {
-        actions: [`handleQueryResults`],
-      },
-    },
+    // on: {
+    //   QUERY_RESULT: {
+    //     actions: [`handleQueryResults`],
+    //   },
+    // },
     states: {
       init: {
         onEntry: [
@@ -82,6 +82,12 @@ const page = Machine(
           idle: {},
           queryRunning: {
             onEntry: `queueQueryRunning`,
+            on: {
+              QUERY_RESULT: {
+                target: `idle`,
+                actions: [`handleQueryResults`],
+              },
+            },
           },
           waitingForQueryText: {},
         },
